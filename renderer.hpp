@@ -1,5 +1,6 @@
 #pragma once
 #include "solver.hpp"
+#include <string>
 
 class Renderer {
 public:
@@ -16,8 +17,11 @@ public:
         boundary_background.setFillColor(sf::Color::Black);
         boundary_background.setPosition(boundary.x, boundary.y);
         boundary_background.setPointCount(128);
-        m_target.draw(boundary_background);
-
+        m_target.draw(boundary_background); // DRAW CIRCLE
+        // m_target.clear(sf::Color::Black);
+        
+        sf::Font arialFont;
+        arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
         // Render objects
         sf::CircleShape circle{1.0f};
         circle.setPointCount(32);
@@ -28,7 +32,22 @@ public:
             circle.setScale(obj.radius, obj.radius);
             circle.setFillColor(obj.color);
             m_target.draw(circle);
+            // sf::Text number;
+            // number.setFont(arialFont);
+            // number.setString(std::to_string(obj.id));
+            // number.setPosition(obj.position.x - obj.radius, obj.position.y - obj.radius);
+            // number.setCharacterSize(24);
+            // m_target.draw(number);
         }
+        // for (int i = 60; i < 840; i += 60) {
+        //     sf::VertexArray lines(sf::LinesStrip, 2);
+        //     lines[0].position = sf::Vector2f(i, 0);
+        //     lines[1].position = sf::Vector2f(i, 840);
+        //     m_target.draw(lines);
+        //     lines[0].position = sf::Vector2f(0, i);
+        //     lines[1].position = sf::Vector2f(840, i);
+        //     m_target.draw(lines);
+        // }
     }
 
 private:
