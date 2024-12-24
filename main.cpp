@@ -1,8 +1,12 @@
 #include <iostream>
+#include <stdio.h>
 #include <math.h>
 #include <SFML/Graphics.hpp>
-#include "solver.hpp"
-#include "renderer.hpp"
+#include "solvers/solver_final.hpp"
+#include "renderers/renderer_fast.hpp"
+#include "thread.hpp"
+#include <chrono>
+#include <thread>
 
 float getRandom() {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
@@ -18,31 +22,72 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
+    freopen("colors.txt", "r", stdin);
+    // freopen("positions.txt", "w", stdout);
+
     // Create window
-    constexpr int window_width  = 840;
-    constexpr int window_height = 840;
+    constexpr int window_width  = 1020;
+    constexpr int window_height = 1020;
+
+    const float        radius         = 2.0f;
+    const int          max_objects    = 85000;
+    const sf::Vector2f spawn_position = {4.0f, 4.0f}; // 4, 4
+    const float        spawn_velocity = 600.0f; // 400
+    const int          max_spawner    = 24;  
+    int                num_spawner    = 24;
+    int                spawned_count  = 0;
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
-    sf::RenderWindow window(sf::VideoMode(window_width, window_height), "Verlet", sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(window_width, window_height), "Particles", sf::Style::Default, settings);
     const int frame_rate = 60;
     window.setFramerateLimit(frame_rate);
-    Renderer renderer{window};
-
-    Solver solver;
-    solver.setBoundary({window_width / 2, window_height / 2}, (window_width - 20.0f) / 2);
-
-    const int          max_objects    = 3000;
-    const float        spawn_delay    = 0.005f;
-    const sf::Vector2f spawn_position = {420.0f, 200.0f};
-    const float        min_radius     = 4.0f;
-    const float        max_radius     = 8.0f;
-    const float        spawn_velocity = 2000.0f;
-    const float        max_angle      = M_PI * 0.5f;
-
-    sf::Clock respawnClock, timer, fpstimer;
+    
+    Threader threadPool(10);
+    Solver solver(window_width, radius, threadPool);
+    Renderer renderer(window, threadPool, solver);
+ 
+    sf::Clock timer, fpstimer;
+    bool done = false;
+    int r, g, b;
     sf::Font arialFont;
     arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+
+    // for (int i = 1; i <= 7; i++) {
+    //     ObstacleDot& obstacle = solver.addObstacleDot(15.0f, 
+    //          {142.5f * i, window_height + 15.0f}, {142.5f * i, -15.0f});
+    //     obstacle.cycle_speed = 3.0f;
+    //     obstacle.update_type = (i % 2) + 1;
+    // }
+    // ObstacleBox& obstacle = solver.addObstacleBox({10.0f, 800.0f}, {510.0f, 510.0f});
+    // obstacle.rotation_speed = 18.0f; // 36 degrees/sec
+    // ObstacleBox& rightBox = solver.addObstacleBox({6.0f, 600.0f},
+    //     {window_width - 35, window_height - 320});
+    // ObstacleBox& rightSlanted = solver.addObstacleBox({6.0f, 50.0f},
+    //     {window_width - 15, window_height - 640});
+    // rightSlanted.rotation = -45.0f;
+    // for (int i = 0; i < 8; i++) {
+    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+    //         {window_width - 15, window_height + 10}, {window_width - 15, window_height - 663});
+    //     moving.update_type = 2;
+    //     moving.cycle_speed = 5;
+    //     moving.time = 0.625f * i;
+    //     moving.rotation = -30.0f;
+    // }
+
+    // ObstacleBox& leftBox = solver.addObstacleBox({6.0f, 600.0f},
+    //     {35, window_height - 320});
+    // ObstacleBox& leftSlanted = solver.addObstacleBox({6.0f, 50.0f},
+    //     {15, window_height - 640});
+    // leftSlanted.rotation = 45.0f;
+    // for (int i = 0; i < 8; i++) {
+    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+    //         {15, window_height + 10}, {15, window_height - 663});
+    //     moving.update_type = 2;
+    //     moving.cycle_speed = 5;
+    //     moving.time = 0.625f * i;
+    //     moving.rotation = 30.0f;
+    // }
 
     // Main loop
     while (window.isOpen()) {
@@ -52,49 +97,88 @@ int main() {
                 window.close();
             }
         }
+        float time = timer.getElapsedTime().asSeconds();
+        // if (time > 75 && !done) {
+        //     done = true;
+        //     for (Particle& obj : solver.objects) {
+        //         std::cout << obj.position.x << ' ' << obj.position.y << std::endl;
+        //     }
+        // }
         // Spawn particles
-        if (solver.getObjects().size() < max_objects && respawnClock.getElapsedTime().asSeconds() >= spawn_delay) {
-            float t = timer.getElapsedTime().asSeconds();
-            float radius = min_radius + (max_radius - min_radius) * getRandom();
-            auto& object = solver.addObject(spawn_position, radius);
-            
-            object.color = getColor(t);
-            float angle = M_PI * 0.5f + max_angle * sin(3 * t);
-            solver.setObjectVelocity(object, spawn_velocity * sf::Vector2f{cos(angle), sin(angle)});
-            respawnClock.restart();
+        int num_objects = solver.objects.size();
+        if (num_objects < max_objects) {
+            sf::Color currentColor = getColor(time);
+            spawned_count++;
+            for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
+                auto& new_object = solver.addObject(spawn_position + sf::Vector2f{0.0f, i * 8.0f}, radius); // 8
+                // std::cin >> r >> g >> b;
+                // new_object.color = {static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)};
+                new_object.color = currentColor;
+                solver.setObjectVelocity(new_object, spawn_velocity * sf::Vector2f{0.8, 0.6});
+            }
+            if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            float ratio = 840.0f / window.getSize().x; // Correct for scaled window
+            float ratio = window_width / window.getSize().x; // Correct for scaled window
             sf::Vector2f pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window)) * ratio;
-            solver.mousePull(pos);
+            solver.mousePull(pos, 120);
         }
         if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-            float ratio = 840.0f / window.getSize().x; // Correct for scaled window
+            float ratio = window_width / window.getSize().x; // Correct for scaled window
             sf::Vector2f pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window)) * ratio;
-            solver.mousePush(pos);
+            solver.mousePush(pos, 120);
         }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) solver.toggleGravityUp();
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) solver.toggleGravityDown();
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) solver.toggleGravityLeft();
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) solver.toggleGravityRight();
+        
+        // Slowdown utils
+        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) std::this_thread::sleep_for (std::chrono::milliseconds(60));
+        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) std::this_thread::sleep_for (std::chrono::milliseconds(250));
 
         fpstimer.restart();
         solver.update();
+        float ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         window.clear(sf::Color::White);
-        renderer.render(solver);
+        renderer.newRender();
+        ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         // Render performance
         sf::Text number;
         number.setFont(arialFont);
-        float ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
-        number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.getObjects().size()) + " particles");
+        
+        number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.objects.size()) + " particles");
         number.setCharacterSize(24);
-        number.setFillColor(sf::Color::Magenta);
-        window.draw(number);
+        number.setFillColor(sf::Color::White);
+        // window.draw(number);
         
         window.display();
     }
-    
     return 0;
 }
+    /*
+    ObstacleBox& rightBox = solver.addObstacleBox({6.0f, 600.0f},
+        {window_width - 35, window_height - 320});
+    ObstacleBox& rightSlanted = solver.addObstacleBox({6.0f, 50.0f},
+        {window_width - 15, window_height - 640});
+    rightSlanted.rotation = -45.0f;
+    for (int i = 0; i < 8; i++) {
+        ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+            {window_width - 15, window_height + 10}, {window_width - 15, window_height - 663});
+        moving.update_type = 2;
+        moving.cycle_speed = 5;
+        moving.time = 0.625f * i;
+        moving.rotation = -30.0f;
+    }
+
+    ObstacleBox& leftBox = solver.addObstacleBox({6.0f, 600.0f},
+        {35, window_height - 320});
+    ObstacleBox& leftSlanted = solver.addObstacleBox({6.0f, 50.0f},
+        {15, window_height - 640});
+    leftSlanted.rotation = 45.0f;
+    for (int i = 0; i < 8; i++) {
+        ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+            {15, window_height + 10}, {15, window_height - 663});
+        moving.update_type = 2;
+        moving.cycle_speed = 5;
+        moving.time = 0.625f * i;
+        moving.rotation = 30.0f;
+    }
+    */

@@ -1,54 +1,11 @@
+// Solver at the end of part 1
+
 #pragma once
 #include <vector>
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
-struct Particle {
-    sf::Vector2f position;
-    sf::Vector2f position_last;
-    sf::Vector2f acceleration;
-    float radius = 10.0f;
-    sf::Color color = sf::Color::Magenta;
-    int gridx = 0, gridy = 0, id = 0;
-
-    Particle() = default;
-    Particle(sf::Vector2f position_, float radius_, int gx_, int gy_, int id_)
-        : position{position_}
-        , position_last{position_}
-        , acceleration{0.0f, 0.0f}
-        , radius{radius_}
-        , gridx{gx_}
-        , gridy{gy_}
-        , id{id_}
-    {}
-
-    void update(float dt) {
-        sf::Vector2f displacement = position - position_last;
-        position_last = position;
-        position      = position + displacement + acceleration * (dt * dt);
-        acceleration  = {};
-        
-        gridx = position.x / 15;
-        gridy = position.y / 15;
-    }
-
-    void accelerate(sf::Vector2f a) {
-        acceleration += a;
-    }
-
-    void setVelocity(sf::Vector2f v, float dt) {
-        position_last = position - (v * dt);
-    }
-
-    void addVelocity(sf::Vector2f v, float dt) {
-        position_last -= v * dt;
-    }
-
-    sf::Vector2f getVelocity() {
-        return position - position_last;
-    }
-};
-
+#include "../particle.hpp"
 
 class Solver {
 public:
@@ -57,7 +14,7 @@ public:
     Particle& addObject(sf::Vector2f position, float radius) {
         int gridx = position.x / grid_size, gridy = position.x / grid_size;
         Particle newParticle = Particle(position, radius, gridx, gridy, objects.size());
-        grid[gridx][gridy].push_back(newParticle);
+        grid[gridx][gridy].push_back(objects.size());
         return objects.emplace_back(newParticle);
     }
 
@@ -82,7 +39,6 @@ public:
         for (int i = 0; i < sub_steps; i++) {
             applyGravity();
             checkCollisions();
-            // applyBoundary();
             applyBorder();
             updateObjects(substep_dt);
         }
@@ -96,31 +52,6 @@ public:
         object.setVelocity(vel, step_dt / sub_steps);
     }
 
-    void setBoundary(sf::Vector2f position, float radius) {
-       boundary_center = position;
-       boundary_radius = radius;
-    }
-
-    sf::Vector3f getBoundary() const {
-      return {boundary_center.x, boundary_center.y, boundary_radius};
-    }
-
-    void toggleGravityUp() {
-        gravity = {0.0f, -1000.0f};
-    }
-
-    void toggleGravityDown() {
-        gravity = {0.0f, 1000.0f};
-    }
-
-    void toggleGravityLeft() {
-        gravity = {-1000.0f, 0.0f};
-    }
-
-    void toggleGravityRight() {
-        gravity = {1000.0f, 0.0f};
-    }
-
 
 private:
     float                  window_size      = 840.0f;
@@ -130,13 +61,11 @@ private:
     std::vector<Particle>  objects;
     float                  step_dt          = 1.0f / 60;
     int                    sub_steps        = 8;
-    int                    grid_size        = 15;
-    std::vector<Particle>  grid[100][100];
-
-    
+    int                    grid_size        = 12;
+    std::vector<int>  grid[350][350];
 
     void applyBorder() {
-        for (auto& obj : objects) {
+        for (auto & obj : objects) {
             const float dampening = 0.75f;
             const sf::Vector2f pos  = obj.position;
             sf::Vector2f npos = obj.position;
@@ -172,34 +101,38 @@ private:
         }
     }
 
-    std::vector<int> getCollisionParticles (int particleID) {
-        Particle p = objects[particleID];
-        std::vector<int> res;
-        for (int i = p.gridx - 1; i <= p.gridx + 1; i++)
-            for (int j = p.gridy - 1; j <= p.gridy + 1; j++) {
-                if (i < 0 || j < 0 || i >= 56 || j >= 56) continue;
-                for (Particle& pp : grid[i][j])
-                    if (pp.id != p.id) res.push_back(pp.id);
-            }
-        return res;
-    }
+    void collideCells (int x1, int y1, int x2, int y2) {
+        for (int id_1 : grid[x1][y1]) {
+            Particle& obj_1 = objects[id_1];
+            for (int id_2 : grid[x2][y2]) {
+                if (id_1 == id_2) continue;
 
-    void checkCollisions() {
-        int num_objects = objects.size();
-        for (Particle& obj_1 : objects) {
-            for (int i : getCollisionParticles(obj_1.id)) {
-                Particle& obj_2 = objects[i];
+                Particle& obj_2 = objects[id_2];
                 sf::Vector2f v = obj_1.position - obj_2.position;
                 float dist = sqrt(v.x * v.x + v.y * v.y);
                 float min_dist = obj_1.radius + obj_2.radius;
                 if (dist < min_dist) {
                     sf::Vector2f n = v / dist; // Normalize
-                    float total_mass = obj_1.radius * obj_1.radius + obj_2.radius * obj_2.radius;
-                    float mass_ratio = (obj_1.radius * obj_1.radius) / total_mass;
                     float delta = 0.5f * (min_dist - dist);
                     // Larger particle moves less
-                    obj_1.position += n * (1 - mass_ratio) * delta;
-                    obj_2.position -= n * mass_ratio * delta;
+                    obj_1.position += n * 0.5f * delta;
+                    obj_2.position -= n * 0.5f * delta;
+                }
+            }
+        }
+    }
+
+    void checkCollisions() {
+        int num_cells = window_size / grid_size;
+        int dx[] = {1, 1, 0, 0, -1};
+        int dy[] = {0, 1, 0, 1, 1};
+        for (int i = 0; i < num_cells; i++) {
+            for (int j = 0; j < num_cells; j++) {
+                if (!grid[i][j].size()) continue;
+                for (int k = 0; k < 5; k++) {
+                    int nx = i + dx[k], ny = j + dy[k];
+                    if (nx < 0 || ny < 0 || nx >= num_cells || ny >= num_cells) continue;
+                    collideCells(i, j, nx, ny);
                 }
             }
         }
@@ -211,12 +144,27 @@ private:
         }
     }
     
+    // void updateObjects(float dt) {
+    //     for (int i = 0; i < 100; i++)
+    //         for (int j = 0; j < 100; j++) grid[i][j].clear();
+    //     for (auto& obj : objects) {
+    //         obj.update(dt);
+    //         grid[obj.gridx][obj.gridy].push_back(obj.id);
+    //     }
+    // }
+    
     void updateObjects(float dt) {
-        for (int i = 0; i < 100; i++)
-            for (int j = 0; j < 100; j++) grid[i][j].clear();
         for (auto& obj : objects) {
+            int cur_gridx = obj.gridx, cur_gridy = obj.gridy;
             obj.update(dt);
-            grid[obj.gridx][obj.gridy].push_back(obj);
+            obj.gridx = obj.position.x / grid_size;
+            obj.gridy = obj.position.y / grid_size;
+
+            if (cur_gridx != obj.gridx || cur_gridy != obj.gridy) {
+                auto pos = find(grid[cur_gridx][cur_gridy].begin(), grid[cur_gridx][cur_gridy].end(), obj.id);
+                grid[cur_gridx][cur_gridy].erase(pos);
+                grid[obj.gridx][obj.gridy].push_back(obj.id);
+            }
         }
     }
 };

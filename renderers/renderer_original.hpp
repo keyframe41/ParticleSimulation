@@ -1,5 +1,5 @@
 #pragma once
-#include "solver.hpp"
+#include "../solvers/solver_original.hpp"
 #include <string>
 
 class Renderer {
@@ -10,17 +10,6 @@ public:
     {}
 
     void render(Solver& solver) const {
-
-        // Draw boundary
-        const sf::Vector3f boundary = solver.getBoundary();
-        sf::CircleShape boundary_background{boundary.z};
-        boundary_background.setOrigin(boundary.z, boundary.z);
-        boundary_background.setFillColor(sf::Color::Black);
-        boundary_background.setPosition(boundary.x, boundary.y);
-        boundary_background.setPointCount(128);
-        target.draw(boundary_background);
-
-        
         target.clear(sf::Color::Black);
         // Draw objects
         sf::CircleShape circle{1.0f};
