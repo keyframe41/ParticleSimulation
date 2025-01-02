@@ -9,10 +9,15 @@
 #include "../obstacles/dot.hpp"
 #include "../obstacles/box.hpp"
 
+float getRandom() {
+    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+}
+
 class Solver {
 public:
-    Solver(float size, float radius, Threader& threader_) 
-        : window_size{size}
+    Solver(float width, float height, float radius, Threader& threader_) 
+        : window_width{width}
+        , window_height{height}
         , grid_size{2 * radius}
         , threader{threader_}
     {}
@@ -64,8 +69,7 @@ public:
     }
 
     void update() {
-        float substep_dt = step_dt / sub_steps;
-        for (int i = 0; i < sub_steps; i++) {
+        for (int i = 0; i < substeps; i++) {
             applyGravity();
             checkCollisions();
             checkDotCollisions();
@@ -78,25 +82,27 @@ public:
     }
 
     void setObjectVelocity(Particle& object, sf::Vector2f vel) {
-        object.setVelocity(vel, step_dt / sub_steps);
+        object.setVelocity(vel, substep_dt);
     }
 
-    float                    window_size      = 1260.0f;
-    sf::Vector2f             gravity          = {0.0f, 150.0f}; // 250
+    float                    window_width     = 1260.0f;
+    float                    window_height    = 1260.0f;
+    float                    dampening        = 0.8f;
+    sf::Vector2f             gravity          = {0.0f, 0.0f}; // 250
     std::vector<Particle>    objects;
-    std::vector<ObstacleDot> dot_obstacles;
 
-    std::vector<ObstacleBox> box_obstacles;
+    std::vector<ObstacleDot>  dot_obstacles;
+    std::vector<ObstacleBox>  box_obstacles;
 
-    float                    step_dt          = 1.0f / 60;
-    int                      sub_steps        = 8;
+    float                    substeps         = 8;
+    float                    substep_dt       = 1.0f / (60 * 8);
 
     float                    grid_size        = 16;
-    std::vector<int>         grid[350][350];
+    std::vector<int>         grid[640][400];
 
     Threader&                threader;
 
-    void bounceOffBorder(int obj_id) {
+    void bounceOffBorder (int obj_id) {
         Particle&          obj = objects[obj_id];
         const sf::Vector2f pos = obj.position;
         sf::Vector2f      npos = obj.position;
@@ -104,17 +110,16 @@ public:
 
         sf::Vector2f dy = { vel.x, -vel.y};
         sf::Vector2f dx = {-vel.x,  vel.y};
-        const float dampening = 1.0f;
 
-        if (pos.x < grid_size || pos.x > window_size - grid_size) { // Bounce off left/right
+        if (pos.x < grid_size || pos.x > window_width - grid_size) { // Bounce off left/right
             if (pos.x < grid_size) npos.x = grid_size;
-            if (pos.x > window_size - grid_size) npos.x = window_size - grid_size;
+            if (pos.x > window_width - grid_size) npos.x = window_width - grid_size;
             obj.position = npos;
             obj.setVelocity(dx * dampening, 1.0);
         }
-        if (pos.y < grid_size || pos.y > window_size - grid_size) { // Bounce off top/bottom
+        if (pos.y < grid_size || pos.y > window_height - grid_size) { // Bounce off top/bottom
             if (pos.y < grid_size) npos.y = grid_size;
-            if (pos.y > window_size - grid_size) npos.y = window_size - grid_size;
+            if (pos.y > window_height - grid_size) npos.y = window_height - grid_size;
             obj.position = npos;
             obj.setVelocity(dy * dampening, 1.0);
         }
@@ -131,7 +136,6 @@ public:
             Particle& obj_1 = objects[id_1];
             for (int id_2 : grid[x2][y2]) {
                 if (id_1 == id_2) continue;
-
                 Particle& obj_2 = objects[id_2];
                 sf::Vector2f v = obj_1.position - obj_2.position;
                 float dist     = v.x * v.x + v.y * v.y;
@@ -150,15 +154,16 @@ public:
     }
 
     void checkCollisionsInSlice (int lcol, int rcol) {
-        int num_cells = window_size / grid_size;
+        int num_cells_width  = window_width  / grid_size;
+        int num_cells_height = window_height / grid_size;
         int      dx[] = {1, 1, 0, 0, -1};
         int      dy[] = {0, 1, 0, 1, 1};
         for (int i = lcol; i < rcol; i++) {
-            for (int j = 0; j < num_cells; j++) {
+            for (int j = 0; j < num_cells_height; j++) {
                 if (!grid[i][j].size()) continue;
                 for (int k = 0; k < 5; k++) {
                     int nx = i + dx[k], ny = j + dy[k];
-                    if (nx < 0 || ny < 0 || nx >= num_cells || ny >= num_cells) continue;
+                    if (nx < 0 || ny < 0 || nx >= num_cells_width || ny >= num_cells_height) continue;
                     collideCells(i, j, nx, ny);
                 }   
             }
@@ -166,8 +171,7 @@ public:
     }
 
     void checkCollisions () {
-        
-        int num_cells   = window_size / grid_size;
+        int num_cells   = window_width / grid_size;
         int slice_count = threader.num_threads * 2;
         int slice_size  = num_cells / slice_count;
 
@@ -196,22 +200,26 @@ public:
         threader.t_queue.waitUntilDone();
     }
 
-    void dotBounce (int obj_id, sf::Vector2f pos, float radius) {
+    bool dotBounce (int obj_id, sf::Vector2f pos, float radius) {
         Particle& obj = objects[obj_id];
-        const sf::Vector2f displacement = pos - obj.position;
-        const float dist = displacement.x * displacement.x + displacement.y * displacement.y;
-        const float min_dist = obj.radius + radius;
+        sf::Vector2f displacement = pos - obj.position;
+        float dist = displacement.x * displacement.x + displacement.y * displacement.y;
+        float min_dist = obj.radius + radius;
         if (dist < min_dist * min_dist) {
-            const sf::Vector2f norm = displacement / sqrt(dist);
-            const sf::Vector2f perp = {-norm.y, norm.x};
-            const sf::Vector2f vel = obj.getVelocity();
+            sf::Vector2f norm = displacement / sqrt(dist);
+            sf::Vector2f perp = {-norm.y, norm.x};
+            sf::Vector2f vel = obj.getVelocity();
             obj.position = pos - norm * min_dist;
-            obj.setVelocity(2.0f * (vel.x * perp.x + vel.y * perp.y) * perp - vel, 1.0f);
+            float dot = vel.x * norm.x + vel.y * norm.y;
+            if (dot < 0) obj.setVelocity(2.0f * (vel.x * perp.x + vel.y * perp.y) * perp - vel, dampening);
+            return true;
         }
+        return false;
     }
 
-    void checkDotCollisions () {
-        int num_cells = window_size / grid_size;
+    void checkDotCollisions () { 
+        int num_cells_width  = window_width  / grid_size;
+        int num_cells_height = window_height / grid_size;
         for (ObstacleDot& dot : dot_obstacles) {
             const sf::Vector2f center = dot.position;
             const float offset = dot.radius + grid_size;
@@ -221,92 +229,118 @@ public:
             int top = (dot.position.y - offset) / grid_size;
             int bottom = (dot.position.y + offset) / grid_size;
             for (int i = left; i <= right; i++) {
-                if (i < 0 || i >= num_cells) continue;
+                if (i < 0 || i >= num_cells_width) continue;
                 for (int j = top; j <= bottom; j++) {
-                    if (j < 0 || j >= num_cells) continue;
+                    if (j < 0 || j >= num_cells_height) continue;
+                    if (!grid[i][j].size()) continue;
                     for (int obj_id : grid[i][j]) dotBounce(obj_id, center, dot.radius);
                 }
             }
         }
     }
 
+    void BoxBonce (int box_id) {
+        int num_cells_width  = window_width  / grid_size;
+        int num_cells_height = window_height / grid_size;
 
-     void checkBoxCollisions () {
-        int num_cells = window_size / grid_size;
+        ObstacleBox& box = box_obstacles[box_id];
+        if (box.durability <= 0) return;
+        // Get limits
+        sf::Transform clockwise, anticlockwise;
+        clockwise.rotate(box.rotation);
+        anticlockwise.rotate(-box.rotation);
+        const sf::Vector2f size = box.dimensions * 0.5f;
+        const sf::Vector2f center = box.position;
 
-        for (ObstacleBox& box : box_obstacles) {
-            // Get limits
-            sf::Transform clockwise, anticlockwise;
-            clockwise.rotate(box.rotation);
-            anticlockwise.rotate(-box.rotation);
-            const sf::Vector2f size = box.dimensions * 0.5f;
-            const sf::Vector2f center = box.position;
+        sf::Vector2f top_left     = anticlockwise.transformPoint(-size.x, -size.y);
+        sf::Vector2f top_right    = anticlockwise.transformPoint( size.x, -size.y);
+        sf::Vector2f bottom_left  = anticlockwise.transformPoint(-size.x,  size.y);
+        sf::Vector2f bottom_right = anticlockwise.transformPoint( size.x,  size.y);
 
-            sf::Vector2f top_left     = anticlockwise.transformPoint(-size.x, -size.y);
-            sf::Vector2f top_right    = anticlockwise.transformPoint( size.x, -size.y);
-            sf::Vector2f bottom_left  = anticlockwise.transformPoint(-size.x,  size.y);
-            sf::Vector2f bottom_right = anticlockwise.transformPoint( size.x,  size.y);
+        float upper_limit = std::min(std::min(top_left.y, top_right.y), std::min(bottom_left.y, bottom_right.y));
+        float lower_limit = std::max(std::max(top_left.y, top_right.y), std::max(bottom_left.y, bottom_right.y));
+        float left_limit  = std::min(std::min(top_left.x, top_right.x), std::min(bottom_left.x, bottom_right.x));
+        float right_limit = std::max(std::max(top_left.x, top_right.x), std::max(bottom_left.x, bottom_right.x));
 
-            float upper_limit = std::min(std::min(top_left.y, top_right.y), std::min(bottom_left.y, bottom_right.y));
-            float lower_limit = std::max(std::max(top_left.y, top_right.y), std::max(bottom_left.y, bottom_right.y));
-            float left_limit  = std::min(std::min(top_left.x, top_right.x), std::min(bottom_left.x, bottom_right.x));
-            float right_limit = std::max(std::max(top_left.x, top_right.x), std::max(bottom_left.x, bottom_right.x));
+        upper_limit = floor((upper_limit + center.y) / grid_size) - 1;
+        lower_limit =  ceil((lower_limit + center.y) / grid_size) + 1;
+        left_limit  = floor((left_limit  + center.x) / grid_size) - 1;
+        right_limit =  ceil((right_limit + center.x) / grid_size) + 1;
 
-            upper_limit = floor((upper_limit + center.y) / grid_size) - 1;
-            lower_limit =  ceil((lower_limit + center.y) / grid_size) + 1;
-            left_limit  = floor((left_limit  + center.x) / grid_size) - 1;
-            right_limit =  ceil((right_limit + center.x) / grid_size) + 1;
+        bool anyHit = false;
 
-            // Check particles
-            for (int i = left_limit; i <= right_limit; i++) {
-                if (i < 0 || i >= num_cells) continue;
-                for (int j = upper_limit; j <= lower_limit; j++) {
-                    if (j < 0 || j >= num_cells) continue;
-                    for (int obj_id : grid[i][j]) {
+        // Check particles
+        for (int i = left_limit; i <= right_limit; i++) {
+            if (i < 0 || i >= num_cells_width) continue;
+            for (int j = upper_limit; j <= lower_limit; j++) {
+                if (j < 0 || j >= num_cells_height) continue;
+                if (!grid[i][j].size()) continue;
+                for (int obj_id : grid[i][j]) {
+                    bool hit = false;
 
-                        dotBounce(obj_id, top_left, 0.0f);
-                        dotBounce(obj_id, top_right, 0.0f);
-                        dotBounce(obj_id, bottom_left, 0.0f);
-                        dotBounce(obj_id, bottom_right, 0.0f);
+                    hit |= dotBounce(obj_id, top_left, 0.0f);
+                    hit |= dotBounce(obj_id, top_right, 0.0f);
+                    hit |= dotBounce(obj_id, bottom_left, 0.0f);
+                    hit |= dotBounce(obj_id, bottom_right, 0.0f);
 
-                        Particle& obj = objects[obj_id];
-                        const float  radius = obj.radius;
-                        sf::Vector2f pos    = obj.position;
-                        sf::Vector2f vel    = obj.getVelocity();
-                        sf::Vector2f rotpos = anticlockwise.transformPoint(pos - center);
-                        sf::Vector2f rotvel = anticlockwise.transformPoint(vel);
+                    Particle& obj = objects[obj_id];
+                    const float  radius = obj.radius;
+                    sf::Vector2f pos    = obj.position;
+                    sf::Vector2f vel    = obj.getVelocity();
+                    sf::Vector2f rotpos = anticlockwise.transformPoint(pos - center);
+                    sf::Vector2f rotvel = anticlockwise.transformPoint(vel);
 
-                        // Top edge
-                        if ((-size.y - radius < rotpos.y && rotpos.y < 0) &&
-                         (-size.x < rotpos.x && rotpos.x < size.x)) {
-                            rotpos.y = -size.y - radius;
-                            if (rotvel.y > 0) rotvel.y *= -1;
-                        }
-                        // Bottom edge
-                        if ((0 < rotpos.y && rotpos.y < size.y + radius) &&
-                         (-size.x < rotpos.x && rotpos.x < size.x)) {
-                            rotpos.y = size.y + radius;
-                            if (rotvel.y < 0) rotvel.y *= -1;
-                        }   
-                        // Left edge
-                        if ((-size.x - radius < rotpos.x && rotpos.x < 0) &&
-                         (-size.y < rotpos.y && rotpos.y < size.y)) {
-                            rotpos.x = -size.x - radius;
-                            if (rotvel.x > 0) rotvel.x *= -1;
-                        }
-                        // Right edge
-                        if ((0 < rotpos.x && rotpos.x < size.x + radius) &&
-                         (-size.y < rotpos.y && rotpos.y < size.y)) {
-                            rotpos.x = size.x + radius;
-                            if (rotvel.x < 0) rotvel.x *= -1;
-                        }
-
-                        obj.position = clockwise.transformPoint(rotpos) + center;
-                        obj.setVelocity(clockwise.transformPoint(rotvel), 1.0f);
+                    // Top edge
+                    if ((-size.y - radius < rotpos.y && rotpos.y < 0) &&
+                        (-size.x < rotpos.x && rotpos.x < size.x)) {
+                        hit = true;
+                        rotpos.y = -size.y - radius;
+                        if (rotvel.y > 0) rotvel.y *= -dampening;
                     }
+                    // Bottom edge
+                    if ((0 < rotpos.y && rotpos.y < size.y + radius) &&
+                        (-size.x < rotpos.x && rotpos.x < size.x)) {
+                        hit = true;
+                        rotpos.y = size.y + radius;
+                        if (rotvel.y < 0) rotvel.y *= -dampening;
+                    }   
+                    // Left edge
+                    if ((-size.x - radius < rotpos.x && rotpos.x < 0) &&
+                        (-size.y < rotpos.y && rotpos.y < size.y)) {
+                        hit = true;
+                        rotpos.x = -size.x - radius;
+                        if (rotvel.x > 0) rotvel.x *= -dampening;
+                    }
+                    // Right edge
+                    if ((0 < rotpos.x && rotpos.x < size.x + radius) &&
+                        (-size.y < rotpos.y && rotpos.y < size.y)) {
+                        hit = true;
+                        rotpos.x = size.x + radius;
+                        if (rotvel.x < 0) rotvel.x *= -dampening;
+                    }
+
+                    obj.position = clockwise.transformPoint(rotpos) + center;
+                    obj.setVelocity(clockwise.transformPoint(rotvel), 1.0f);
+
+                    if (hit && box.color == sf::Color::Green && box.durability > 0) {
+                        obj.position = {window_width - 10 - 180 * getRandom(), 50 + 300 * getRandom()};
+                        obj.setVelocity({0, 0}, 1.0f);
+                    }
+                    if (hit && box.color == sf::Color::Red && box.durability > 0) {
+                        obj.position = {30 + 2200 * getRandom(), 10 + 50 * getRandom()};
+                        obj.setVelocity({0, 0}, 1.0f);
+                    }
+                    anyHit |= hit;
                 }
             }
         }
+        if (anyHit && box.breakable && box.durability > 0) box.durability--;
+    }
+
+    void checkBoxCollisions () {
+        threader.parallel(box_obstacles.size(), [&](int start, int end) {
+            for (int i = start; i < end; i++) BoxBonce(i);
+        });
     }
 
     void applyGravity() {
@@ -323,7 +357,7 @@ public:
             obj.gridx = obj.position.x / grid_size;
             obj.gridy = obj.position.y / grid_size;
             sf::Vector2f vel = obj.getVelocity();
-            if (vel.x * vel.x + vel.y * vel.y > grid_size) obj.setVelocity({0.0f, 0.0f}, 1.0);
+            if (vel.x * vel.x + vel.y * vel.y > 2 * grid_size) obj.setVelocity({0.0f, 0.0f}, 1.0);
         }
     }
 
@@ -334,22 +368,19 @@ public:
     }
 
     void updateObstacles(float dt) {
-        for (auto& dot : dot_obstacles) {
-            dot.update(dt);
-        }
-        for (auto& box : box_obstacles) {
-            box.update(dt);
-        }
+        for (auto& dot : dot_obstacles) dot.update(dt);
+        for (auto& box : box_obstacles) box.update(dt);
     }
 
     void updateGrid() {
-        int num_cells   = window_size / grid_size;
-        for (int i = 0; i < num_cells; i++)
-            for (int j = 0; j < num_cells; j++)
+        int num_cells_width  = window_width  / grid_size;
+        int num_cells_height = window_height / grid_size;
+        for (int i = 0; i < num_cells_width; i++)
+            for (int j = 0; j < num_cells_height; j++)
                 grid[i][j].clear();
 
         for (Particle& obj : objects) {
-            if (obj.gridx < 0 || obj.gridy < 0 || obj.gridx >= num_cells && obj.gridy >= num_cells) continue;
+            if (obj.gridx < 0 || obj.gridy < 0 || obj.gridx >= num_cells_width || obj.gridy >= num_cells_height) continue;
             grid[obj.gridx][obj.gridy].push_back(obj.id);
         }
     }

@@ -4,10 +4,6 @@
 #include "solvers/solver_original.hpp"
 #include "renderers/renderer_original.hpp"
 
-float getRandom() {
-    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-}
-
 static sf::Color getColor(float t) {
     const float r = sin(t);
     const float g = sin(t + 0.33f * 2.0f * M_PI);

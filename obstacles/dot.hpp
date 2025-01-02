@@ -11,6 +11,7 @@ struct ObstacleDot {
     float time = 0.0f;
     float cycle_speed = 10.0f;
     int update_type = 1;
+    sf::Color color = sf::Color::White;
 
     ObstacleDot() = default;
     ObstacleDot(sf::Vector2f start_position_, sf::Vector2f end_position_, float radius_)
@@ -35,7 +36,7 @@ struct ObstacleDot {
     }
     
     void oscillate () {
-        float between = 0.5f * (1 + sin(2 * M_PI / cycle_speed * time));
+        float between = 0.5f * (1 - cos(2 * M_PI / cycle_speed * time));
         position = start_position + (end_position - start_position) * between;
     }
 

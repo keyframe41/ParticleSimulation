@@ -11,8 +11,10 @@ struct ObstacleBox {
     float time = 0.0f, rotation = 0.0f;
     float cycle_speed = 2.0f * M_PI;
     float rotation_speed = 0.0f;
-    sf::Color color = sf::Color::White;
     int update_type = 1;
+    bool breakable = false;
+    float durability = 2000, total_dur = 2000;
+    sf::Color color = sf::Color::White;
 
     ObstacleBox() = default;
     ObstacleBox(sf::Vector2f dimensions_, sf::Vector2f start_position_, sf::Vector2f end_position_)
