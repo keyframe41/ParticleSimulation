@@ -1,3 +1,8 @@
+# Instructions
+Part 1 code is in main_original.cpp, solver_original.hpp and renderer_original.hpp, so paste main_original.cpp into main.cpp and make sure it links to the right solver/renderer
+
+Part 2 code is in main_new.cpp, renderer_fast.hpp, and solver_final.hpp as well as some others
+The python code to get pixel colors based on positions is not on here, you can get it on request.
 # CMake SFML Project Template
 
 This repository template should allow for a fast and hassle-free kick start of your next SFML project using CMake.
