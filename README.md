@@ -1,8 +1,13 @@
-# Instructions
-Part 1 code is in main_original.cpp, solver_original.hpp and renderer_original.hpp, so paste main_original.cpp into main.cpp and make sure it links to the right solver/renderer
+# About
+As my first foray into a large-ish project, I made a Verlet Integration-based physics solver to simulate particles moving around and interacting with each other and obstacles, with inspiration from 2 videos ([1](https://www.youtube.com/watch?v=lS_qeBy3aQI) and [2](https://www.youtube.com/watch?v=9IULfQH7E90)) on the same project by Pezzza's Work. I also made 2 videos on my process: [Part 1](https://www.youtube.com/watch?v=XL8B5nzNEOc) and [Part 2](https://www.youtube.com/watch?v=tqF883zXRA4&t=1213s). By skimming through these you can get a pretty good idea of how everything works.
 
-Part 2 code is in main_new.cpp, renderer_fast.hpp, and solver_final.hpp as well as some others
-The python code to get pixel colors based on positions is not on here, you can get it on request.
+Part 1 code is in main/main_original.cpp, solvers/solver_original.hpp and renderers/renderer_original.hpp, so paste main_original.cpp into main.cpp and make sure it links to the right solver and renderer.
+Part 2 code uses renderer_fast.hpp, and solver_final.hpp. Some presets for the simulation can be found in the main folder.
+
+Beware of in.cpp and out.cpp, I used these to make bad apple (shown [here](https://www.youtube.com/watch?v=th8wpz4RstM)) and as I detail, this takes a very long time and a lot of memory to set up and run.
+The python code to get pixel colors based on positions is not on here, I'll send it to you if you need it.
+
+This repository uses the CMake SFML project template, so instructions to install the tools needed to run this are below.
 # CMake SFML Project Template
 
 This repository template should allow for a fast and hassle-free kick start of your next SFML project using CMake.
