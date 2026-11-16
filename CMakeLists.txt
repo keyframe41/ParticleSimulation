@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
 project(ParticleSimulation LANGUAGES CXX)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 set(SFML_BUILD_AUDIO OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_NETWORK OFF CACHE BOOL "" FORCE)
@@ -24,12 +23,12 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 # ---- One executable per preset in main/ ----
-# in and out are the Bad Apple pipeline, so they're only built when asked for.
-option(BUILD_BAD_APPLE "Also build the in/out Bad Apple presets" OFF)
+# media_generator for Bad Apple pipeline, which is optional as it's gonna be slow
+option(BUILD_MEDIA_GENERATOR "Also build the media_generator program" OFF)
 
 set(PRESETS main_original main_new galtonboard breakout1 breakout2 course trail)
-if(BUILD_BAD_APPLE)
-    list(APPEND PRESETS in out)
+if(BUILD_MEDIA_GENERATOR)
+    list(APPEND PRESETS media_generator)
 endif()
 
 foreach(preset ${PRESETS})
@@ -46,4 +45,3 @@ foreach(preset ${PRESETS})
         target_compile_options(${preset} PRIVATE /permissive-)
     endif()
 endforeach()
-

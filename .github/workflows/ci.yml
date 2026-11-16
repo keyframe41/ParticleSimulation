@@ -26,7 +26,7 @@ jobs:
             libfreetype-dev libgl1-mesa-dev libegl1-mesa-dev
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_BAD_APPLE=ON
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_MEDIA_GENERATOR=ON
 
       - name: Build
         run: cmake --build build --config Release
