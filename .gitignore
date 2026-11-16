@@ -4,3 +4,8 @@ out
 .idea
 .vs
 .vscode
+.DS_Store
+CMakeCache.txt
+CMakeFiles/
+*.code-workspace
+bin/
