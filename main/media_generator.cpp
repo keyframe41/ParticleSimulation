@@ -52,8 +52,8 @@ int main() {
     Renderer renderer(window, threadPool, solver);
  
     sf::Clock timer, fpstimer;
-    sf::Font arialFont;
-    arialFont.loadFromFile("assets/Arial Unicode.ttf");
+    sf::Font font;
+    font.loadFromFile("assets/JetBrainsMonoNL-Regular.ttf");
     // 2 up and down dots
     ObstacleDot& ldot = solver.addObstacleDot(20.0, {400.0, -20.0}, {400.0, window_height + 20.0});
     ldot.cycle_speed = 240.0 / 144.0;
@@ -127,7 +127,7 @@ int main() {
         ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         // Render performance
         sf::Text number;
-        number.setFont(arialFont);
+        number.setFont(font);
         
         number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.objects.size()) + " particles");
         number.setCharacterSize(24);

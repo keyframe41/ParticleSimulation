@@ -49,8 +49,8 @@ int main() {
     sf::Clock timer, fpstimer;
     bool done = false;
     int r, g, b;
-    sf::Font arialFont;
-    arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    sf::Font font;
+    font.loadFromFile("/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     // Optional obstable blocks
     // // Upwards moving dots
     // for (int i = 1; i <= 7; i++) {
@@ -152,7 +152,7 @@ int main() {
         renderer.newRender();
         // Render performance
         sf::Text number;
-        number.setFont(arialFont);
+        number.setFont(font);
         float ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.objects.size()) + " particles");
         number.setCharacterSize(24);

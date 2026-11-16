@@ -46,8 +46,8 @@ int main() {
     Renderer renderer(window, threadPool, solver);
  
     sf::Clock timer, fpstimer;
-    sf::Font arialFont;
-    arialFont.loadFromFile("assets/Arial Unicode.ttf");
+    sf::Font font;
+    font.loadFromFile("assets/JetBrainsMonoNL-Regular.ttf");
 
     for (int i = 1; i <= 21; i++) {
         float height = 340 + i * 20;
@@ -104,7 +104,7 @@ int main() {
         ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         // Render performance
         sf::Text number;
-        number.setFont(arialFont);
+        number.setFont(font);
         
         number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.objects.size()) + " particles");
         number.setCharacterSize(24);

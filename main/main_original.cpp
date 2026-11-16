@@ -35,8 +35,8 @@ int main() {
     const float        max_angle      = M_PI * 0.5f;
 
     sf::Clock respawnClock, timer, fpstimer;
-    sf::Font arialFont;
-    arialFont.loadFromFile("assets/Arial Unicode.ttf");
+    sf::Font font;
+    font.loadFromFile("assets/JetBrainsMonoNL-Regular.ttf");
 
     // Main loop
     while (window.isOpen()) {
@@ -74,7 +74,7 @@ int main() {
         renderer.render(solver);
         // Render performance
         sf::Text number;
-        number.setFont(arialFont);
+        number.setFont(font);
         float ms = 1.0 * fpstimer.getElapsedTime().asMicroseconds() / 1000;
         number.setString(std::to_string(ms) + "ms, " + std::to_string(solver.getObjects().size()) + " particles");
         number.setCharacterSize(24);
