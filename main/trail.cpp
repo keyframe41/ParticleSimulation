@@ -1,3 +1,4 @@
+// Particle trail demo
 // gravity 600, dampening 0.8
 #include <iostream>
 #include <stdio.h>
@@ -34,7 +35,7 @@ int main() {
     const int          max_spawner    = 8;  
     int                num_spawner    = 8;
     int                spawned_count  = 0;
-    sf::Vector2f       gravity        = {0.0f, 250.0f};
+    sf::Vector2f       gravity        = {0.0f, 600.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;

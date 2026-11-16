@@ -1,4 +1,4 @@
-// gravity 0, dampening 1
+// Atari breakout style scene
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_final.hpp"
@@ -19,8 +19,6 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    std::ifstream color_file("colors.txt"); // optional: precomputed colors (Bad Apple)
-
     // Create window
     constexpr int window_width  = 2560;
     constexpr int window_height = 1380;
@@ -30,7 +28,7 @@ int main() {
     const sf::Vector2f spawn_position = {window_width / 2 - 105.0, window_height - 50};
     int                num_spawner    = 8;
     int                spawned_count  = 0;
-    sf::Vector2f       gravity        = {0.0f, 250.0f};
+    sf::Vector2f       gravity        = {0.0f, 0.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -67,11 +65,9 @@ int main() {
         if (num_objects < max_objects) {
             spawned_count++;
             for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
-                // sf::Color currentColor = getColor(time + i * 0.5);
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{i * 30.0f, getRandom()}, radius);
                 new_object.color = sf::Color::White;
             }
-            // if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {

@@ -1,7 +1,7 @@
+// circular dot obstacle
 #pragma once
 #include <vector>
 #include <iostream>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 struct ObstacleDot {
     sf::Vector2f position;
@@ -9,7 +9,7 @@ struct ObstacleDot {
     sf::Vector2f end_position;
     float radius = 10.0f;
     float time = 0.0f;
-    float cycle_speed = 10.0f;
+    float cycle_speed = 10.0f; // number of seconds per movement period
     int update_type = 1;
     sf::Color color = sf::Color::White;
 
@@ -25,10 +25,10 @@ struct ObstacleDot {
         time += dt;
         switch (update_type) {
             case 1:
-                oscillate();
+                oscillate(); // cosine between start and end position
                 break;
             case 2:
-                linear();
+                linear(); // Loop interpolate between start and end position
                 break;
             default:
                 break;

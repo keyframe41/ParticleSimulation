@@ -70,7 +70,7 @@ public:
     }
 
     void update() {
-        for (int i = 0; i < substeps; i++) {
+        for (int i = 0; i < substeps; i++) { // 8 substeps per frame, effectively 480Hz to account for high velocities
             applyGravity();
             checkCollisions();
             checkDotCollisions();
@@ -154,7 +154,7 @@ public:
         }
     }
 
-    void checkCollisionsInSlice (int lcol, int rcol) {
+    void checkCollisionsInSlice (int lcol, int rcol) { // Multithreading checks collisions in vertical slices to guarantee determnism
         int num_cells_width  = window_width  / grid_size;
         int num_cells_height = window_height / grid_size;
         int      dx[] = {1, 1, 0, 0, -1};
@@ -176,7 +176,7 @@ public:
         int slice_count = threader.num_threads * 2;
         int slice_size  = num_cells / slice_count;
 
-        // Left pass
+        // Left pass, half of all slices
         for (int i = 0; i < threader.num_threads; i++) {
             threader.t_queue.addTask([this, i, slice_size]{
                 int start = 2 * i * slice_size;
@@ -190,7 +190,7 @@ public:
             }); 
         }
         threader.t_queue.waitUntilDone();
-        // Right pass
+        // Right pass, other half of all slices
         for (int i = 0; i < threader.num_threads; i++) {
             threader.t_queue.addTask([this, i, slice_size]{
                 int start = (2 * i + 1) * slice_size;
@@ -201,7 +201,7 @@ public:
         threader.t_queue.waitUntilDone();
     }
 
-    bool dotBounce (int obj_id, sf::Vector2f pos, float radius) {
+    bool dotBounce (int obj_id, sf::Vector2f pos, float radius) { // Bounce off dot obstacle
         Particle& obj = objects[obj_id];
         sf::Vector2f displacement = pos - obj.position;
         float dist = displacement.x * displacement.x + displacement.y * displacement.y;
@@ -240,19 +240,19 @@ public:
         }
     }
 
-    void BoxBonce (int box_id) {
+    void BoxBounce (int box_id) { // Bounce off box obstacle
         int num_cells_width  = window_width  / grid_size;
         int num_cells_height = window_height / grid_size;
 
         ObstacleBox& box = box_obstacles[box_id];
         if (box.durability <= 0) return;
         // Get limits
-        sf::Transform clockwise, anticlockwise;
-        clockwise.rotate(box.rotation);
+        sf::Transform clockwise, anticlockwise; // Use rotation matrices to calculate collision
+        clockwise.rotate(box.rotation); // Rotate into box frame
         anticlockwise.rotate(-box.rotation);
         const sf::Vector2f size = box.dimensions * 0.5f;
         const sf::Vector2f center = box.position;
-
+        
         sf::Vector2f top_left     = anticlockwise.transformPoint(-size.x, -size.y);
         sf::Vector2f top_right    = anticlockwise.transformPoint( size.x, -size.y);
         sf::Vector2f bottom_left  = anticlockwise.transformPoint(-size.x,  size.y);
@@ -262,7 +262,7 @@ public:
         float lower_limit = std::max(std::max(top_left.y, top_right.y), std::max(bottom_left.y, bottom_right.y));
         float left_limit  = std::min(std::min(top_left.x, top_right.x), std::min(bottom_left.x, bottom_right.x));
         float right_limit = std::max(std::max(top_left.x, top_right.x), std::max(bottom_left.x, bottom_right.x));
-
+        // Get bounding box of obstacle
         upper_limit = floor((upper_limit + center.y) / grid_size) - 1;
         lower_limit =  ceil((lower_limit + center.y) / grid_size) + 1;
         left_limit  = floor((left_limit  + center.x) / grid_size) - 1;
@@ -278,7 +278,7 @@ public:
                 if (!grid[i][j].size()) continue;
                 for (int obj_id : grid[i][j]) {
                     bool hit = false;
-
+                    // Check for corner collision
                     hit |= dotBounce(obj_id, top_left, 0.0f);
                     hit |= dotBounce(obj_id, top_right, 0.0f);
                     hit |= dotBounce(obj_id, bottom_left, 0.0f);
@@ -340,7 +340,7 @@ public:
 
     void checkBoxCollisions () {
         threader.parallel(box_obstacles.size(), [&](int start, int end) {
-            for (int i = start; i < end; i++) BoxBonce(i);
+            for (int i = start; i < end; i++) BoxBounce(i);
         });
     }
 

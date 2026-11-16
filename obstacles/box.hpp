@@ -1,7 +1,7 @@
+// rectangular box obstacle
 #pragma once
 #include <vector>
 #include <iostream>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 struct ObstacleBox {
     sf::Vector2f position;
@@ -9,11 +9,11 @@ struct ObstacleBox {
     sf::Vector2f start_position;
     sf::Vector2f end_position;
     float time = 0.0f, rotation = 0.0f;
-    float cycle_speed = 2.0f * M_PI;
-    float rotation_speed = 0.0f;
+    float cycle_speed = 2.0f * M_PI; // number of seconds per movement period
+    float rotation_speed = 0.0f; // optional rotation (degrees / second)
     int update_type = 1;
     bool breakable = false;
-    float durability = 2000, total_dur = 2000;
+    float durability = 2000, total_dur = 2000; // breakable box durability
     sf::Color color = sf::Color::White;
 
     ObstacleBox() = default;
@@ -29,10 +29,10 @@ struct ObstacleBox {
         rotation += rotation_speed * dt;
         switch (update_type) {
         case 1: 
-            oscillate();
+            oscillate(); // cosine between start and end position
             break;
         case 2:
-            linear();
+            linear(); // Loop interpolate between start and end position
         default:
             break;
         }

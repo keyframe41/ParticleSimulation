@@ -51,43 +51,48 @@ int main() {
     int r, g, b;
     sf::Font arialFont;
     arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
-    // Optional obstable block
-    /*
-    for (int i = 1; i <= 7; i++) {
-        ObstacleDot& obstacle = solver.addObstacleDot(15.0f, 
-             {170.0f * i, window_height + 15.0f}, {170.0f * i, -15.0f});
-        obstacle.color = sf::Color::White;
-        obstacle.cycle_speed = 3.0f;
-        obstacle.update_type = 2;
-    }
-    ObstacleBox& rightBox = solver.addObstacleBox({6.0f, 600.0f},
-        {window_width - 35, window_height - 320});
-    ObstacleBox& rightSlanted = solver.addObstacleBox({6.0f, 50.0f},
-        {window_width - 15, window_height - 640});
-    rightSlanted.rotation = -45.0f;
-    for (int i = 0; i < 8; i++) {
-        ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
-            {window_width - 15, window_height + 10}, {window_width - 15, window_height - 663});
-        moving.update_type = 2;
-        moving.cycle_speed = 5;
-        moving.time = 0.625f * i;
-        moving.rotation = -30.0f;
-    }
-
-    ObstacleBox& leftBox = solver.addObstacleBox({6.0f, 600.0f},
-        {35, window_height - 320});
-    ObstacleBox& leftSlanted = solver.addObstacleBox({6.0f, 50.0f},
-        {15, window_height - 640});
-    leftSlanted.rotation = 45.0f;
-    for (int i = 0; i < 8; i++) {
-        ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
-            {15, window_height + 10}, {15, window_height - 663});
-        moving.update_type = 2;
-        moving.cycle_speed = 5;
-        moving.time = 0.625f * i;
-        moving.rotation = 30.0f;
-    }
-    */
+    // Optional obstable blocks
+    // // Upwards moving dots
+    // for (int i = 1; i <= 7; i++) {
+    //     ObstacleDot& obstacle = solver.addObstacleDot(15.0f, 
+    //          {170.0f * i, window_height + 15.0f}, {170.0f * i, -15.0f});
+    //     obstacle.color = sf::Color::White;
+    //     obstacle.cycle_speed = 3.0f;
+    //     obstacle.update_type = 2;
+    // }
+    // // Right elevator
+    // ObstacleBox& rightBox = solver.addObstacleBox({6.0f, 600.0f},
+    //     {window_width - 35, window_height - 320});
+    // ObstacleBox& rightSlanted = solver.addObstacleBox({6.0f, 50.0f},
+    //     {window_width - 15, window_height - 640});
+    // rightSlanted.rotation = -45.0f;
+    // for (int i = 0; i < 8; i++) {
+    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+    //         {window_width - 15, window_height + 10}, {window_width - 15, window_height - 663});
+    //     moving.update_type = 2;
+    //     moving.cycle_speed = 5;
+    //     moving.time = 0.625f * i;
+    //     moving.rotation = -30.0f;
+    // }
+    // // Left elevator
+    // ObstacleBox& leftBox = solver.addObstacleBox({6.0f, 600.0f},
+    //     {35, window_height - 320});
+    // ObstacleBox& leftSlanted = solver.addObstacleBox({6.0f, 50.0f},
+    //     {15, window_height - 640});
+    // leftSlanted.rotation = 45.0f;
+    // for (int i = 0; i < 8; i++) {
+    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
+    //         {15, window_height + 10}, {15, window_height - 663});
+    //     moving.update_type = 2;
+    //     moving.cycle_speed = 5;
+    //     moving.time = 0.625f * i;
+    //     moving.rotation = 30.0f;
+    // }
+    // // Big fan in the center
+    // ObstacleBox& massive = solver.addObstacleBox({5.0f, window_height - 200},
+    //     {window_width / 2, window_height / 2});
+    // massive.update_type = 2;
+    // massive.rotation_speed = 30.0f;
     
     // Main loop
     while (window.isOpen()) {

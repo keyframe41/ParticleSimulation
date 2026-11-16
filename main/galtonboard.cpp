@@ -1,3 +1,4 @@
+// Galton board demonstration
 // dampening 0.4, gravity 200
 #include <iostream>
 #include <stdio.h>
@@ -20,9 +21,6 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    freopen("colors.txt", "r", stdin);
-    // freopen("positions.txt", "w", stdout);
-
     // Create window
     constexpr int window_width  = 1560;
     constexpr int window_height = 1380;
@@ -35,7 +33,7 @@ int main() {
     const int          max_spawner    = 16; 
     int                num_spawner    = 16;
     int                spawned_count  = 0;
-    sf::Vector2f       gravity        = {0.0f, 250.0f};
+    sf::Vector2f       gravity        = {0.0f, 200.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -48,8 +46,6 @@ int main() {
     Renderer renderer(window, threadPool, solver);
  
     sf::Clock timer, fpstimer;
-    bool done = false;
-    int r, g, b;
     sf::Font arialFont;
     arialFont.loadFromFile("assets/Arial Unicode.ttf");
 
@@ -72,12 +68,6 @@ int main() {
             }
         }
         float time = timer.getElapsedTime().asSeconds();
-        // if (time > 75 && !done) {
-        //     done = true;
-        //     for (Particle& obj : solver.objects) {
-        //         std::cout << obj.position.x << ' ' << obj.position.y << std::endl;
-        //     }
-        // }
         // Spawn particles
         int num_objects = solver.objects.size();
         if (num_objects < max_objects) {
@@ -85,8 +75,6 @@ int main() {
             spawned_count++;
             for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{i * 8.0f + getRandom(), 0.0f}, radius); // 8
-                // std::cin >> r >> g >> b;
-                // new_object.color = {static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)};
                 new_object.color = currentColor;
                 solver.setObjectVelocity(new_object, spawn_velocity * sf::Vector2f{0.0, 1.0});
             }
@@ -104,7 +92,7 @@ int main() {
             solver.mousePush(pos, 120);
         }
         
-        // Slowdown utils IMPORTANT
+        // Slowdown utils
         // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) std::this_thread::sleep_for (std::chrono::milliseconds(60));
         // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) std::this_thread::sleep_for (std::chrono::milliseconds(250));
 
@@ -127,38 +115,3 @@ int main() {
     }
     return 0;
 }
-    // for (int i = 1; i <= 7; i++) {
-    //     ObstacleDot& obstacle = solver.addObstacleDot(15.0f, 
-    //          {142.5f * i, window_height + 15.0f}, {142.5f * i, -15.0f});
-    //     obstacle.cycle_speed = 3.0f;
-    //     obstacle.update_type = (i % 2) + 1;
-    // }
-    // ObstacleBox& obstacle = solver.addObstacleBox({10.0f, 800.0f}, {510.0f, 510.0f});
-    // obstacle.rotation_speed = 18.0f; // 36 degrees/sec
-    // ObstacleBox& rightBox = solver.addObstacleBox({6.0f, 600.0f},
-    //     {window_width - 35, window_height - 320});
-    // ObstacleBox& rightSlanted = solver.addObstacleBox({6.0f, 50.0f},
-    //     {window_width - 15, window_height - 640});
-    // rightSlanted.rotation = -45.0f;
-    // for (int i = 0; i < 8; i++) {
-    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
-    //         {window_width - 15, window_height + 10}, {window_width - 15, window_height - 663});
-    //     moving.update_type = 2;
-    //     moving.cycle_speed = 5;
-    //     moving.time = 0.625f * i;
-    //     moving.rotation = -30.0f;
-    // }
-
-    // ObstacleBox& leftBox = solver.addObstacleBox({6.0f, 600.0f},
-    //     {35, window_height - 320});
-    // ObstacleBox& leftSlanted = solver.addObstacleBox({6.0f, 50.0f},
-    //     {15, window_height - 640});
-    // leftSlanted.rotation = 45.0f;
-    // for (int i = 0; i < 8; i++) {
-    //     ObstacleBox& moving = solver.addObstacleBox({40.0f, 6.0f},
-    //         {15, window_height + 10}, {15, window_height - 663});
-    //     moving.update_type = 2;
-    //     moving.cycle_speed = 5;
-    //     moving.time = 0.625f * i;
-    //     moving.rotation = 30.0f;
-    // }

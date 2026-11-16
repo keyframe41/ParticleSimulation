@@ -1,12 +1,16 @@
+// Used when inputting or outputting particle positions for a video e.g. bad apple
+// (You have to write a separate program to get the frames and get the colors)
+// Additionally this can be done for just one frame to generate an image, simply wait until a certain number of seconds before printing
+
 #include <iostream>
 #include <stdio.h>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_final.hpp"
 #include "renderers/renderer_fast.hpp"
 #include "thread.hpp"
 #include <chrono>
 #include <thread>
+
 
 static sf::Color getColor(float t) {
     const float r = sin(t);
@@ -20,7 +24,8 @@ static sf::Color getColor(float t) {
 int main() {
     std::ios::sync_with_stdio(false);
     std::cin.tie(0); std::cout.tie(0);
-    freopen("positions.txt", "w", stdout);
+    freopen("colors.txt", "r", stdin); // For input
+    // freopen("positions.txt", "w", stdout); // For output
 
     // Create window
     constexpr int window_width  = 1840;
@@ -47,26 +52,26 @@ int main() {
     Renderer renderer(window, threadPool, solver);
  
     sf::Clock timer, fpstimer;
-    int r, g, b;
     sf::Font arialFont;
     arialFont.loadFromFile("assets/Arial Unicode.ttf");
-
-    // ObstacleBox& left = solver.addObstacleBox({4, 1000}, {200, window_height / 2}, 
-    //     {300, window_height / 2});
-    // left.cycle_speed = 120.0 / 144.0;
-    // left.rotation = 15;
-    // ObstacleBox& right = solver.addObstacleBox({4, 1000}, {window_width - 300, window_height / 2}, 
-    //     {window_width - 400, window_height / 2});
-    // right.cycle_speed = 120.0 / 144.0;
-    // right.rotation = -15;
+    // 2 up and down dots
     ObstacleDot& ldot = solver.addObstacleDot(20.0, {400.0, -20.0}, {400.0, window_height + 20.0});
     ldot.cycle_speed = 240.0 / 144.0;
     ObstacleDot& rdot = solver.addObstacleDot(20.0, {window_width - 400.0, window_height + 20.0}, 
         {window_width - 400.0, -20.0});
     rdot.cycle_speed = 240.0 / 144.0;
 
-    std::vector<std::pair<int, int>> pos[7000];
-    int pos_counter = 0;
+    std::vector<int> colors[7000];
+    bool ok = false;
+    int val;
+    // Position/color input loop
+    for (int i = 0; i < 6570; i++) { 
+        for (int j = 0; j < 25000; j++) {
+            std::cin >> val;
+            colors[i].push_back(val);
+        }
+        if (i % 10 == 0) std::cout << "Frame " << i << " done\n";
+    }
 
     while (window.isOpen()) {
         sf::Event event{};
@@ -76,17 +81,8 @@ int main() {
             }
         }
         float time = timer.getElapsedTime().asSeconds();
-
-        if (frame >= 1350 && frame < 14490 && frame % 2 == 0) {
-            pos_counter++;
-            for (Particle& obj : solver.objects) {
-                pos[pos_counter].push_back(std::make_pair((int)obj.position.x, (int)obj.position.y));
-            }
-        }
-        
-        if (frame > 14490) {
-            window.close();
-        }
+        if (frame >= 1350) ok = true;
+        if (frame > 1350 + 6570 * 2) ok = false;
         frame++;
         // Spawn particles
         int num_objects = solver.objects.size();
@@ -95,12 +91,17 @@ int main() {
             spawned_count++;
             for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{i * 10.0f, 0.0f}, radius); // 8
-                // std::cin >> r >> g >> b;
-                // new_object.color = {static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)};
                 new_object.color = currentColor;
                 solver.setObjectVelocity(new_object, spawn_velocity * sf::Vector2f{0.4, 0.9});
             }
             if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
+        }
+        if (ok && frame % 2 == 0) {
+            int index = (frame - 1350) / 2;
+            for (int i = 0; i < 25000; i++) {
+                val = colors[index][i];
+                solver.objects[i].color = {static_cast<uint8_t>(val), static_cast<uint8_t>(val), static_cast<uint8_t>(val)};
+            }
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
@@ -135,8 +136,8 @@ int main() {
         
         window.display();
     }
-    for (int i = 1; i <= pos_counter; i++)
-        for (std::pair<int, int> j : pos[i]) 
-            std::cout << j.first << ' ' << j.second << std::endl;
+    // Position/color output loop
+    // for (int i = 1; i <= pos_counter; i++)
+        // for (std::pair<int, int> j : pos[i]) std::cout << j.first << ' ' << j.second << std::endl;
     return 0;
 }

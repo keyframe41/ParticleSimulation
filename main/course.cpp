@@ -1,7 +1,6 @@
-// gravity
+// Marble obstacle course, particles want to fall down, while red sends them back to the beginning (it's hard)
+// choose a high value of gravity
 #include <iostream>
-#include <stdio.h>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_final.hpp"
 #include "renderers/renderer_fast.hpp"
@@ -19,9 +18,6 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    // freopen("colors.txt", "r", stdin);
-    // freopen("positions.txt", "w", stdout);
-
     // Create window
     constexpr int window_width  = 2560;
     constexpr int window_height = 1380;
@@ -29,10 +25,9 @@ int main() {
     const float        radius         = 4.0f;
     const int          max_objects    = 2400;
     const sf::Vector2f spawn_position = {24, 8};
-    const int          max_spawner    = 230;  
     int                num_spawner    = 230;
     int                spawned_count  = 0;
-    sf::Vector2f       gravity        = {0.0f, 250.0f};
+    sf::Vector2f       gravity        = {0.0f, 500.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -59,6 +54,7 @@ int main() {
     for (int i = 0; i < 8; i++) {
         int start = (i % 2 == 0 ? 40 : 200);
         for (float j = start; j <= window_width - 200; j += 320) {
+            // Optional extra difficulty (dot obstacles)
             // ObstacleDot& obs = solver.addObstacleDot(30, {j, window_height + 30}, {j, 200});
             // obs.cycle_speed = 6;
             // obs.update_type = 2;
@@ -88,9 +84,7 @@ int main() {
                 sf::Color currentColor = getColor(time + i * 0.02);
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{i * 10.0f + getRandom(), 0}, radius);
                 new_object.color = currentColor;
-                // solver.setObjectVelocity(new_object, {800, 600});
             }
-            // if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {

@@ -1,3 +1,4 @@
+// This uses vertex arrays and a circle texture so we only do a few draw calls instead of all objects one by one
 #pragma once
 #include "../solvers/solver_final.hpp"
 #include <SFML/Graphics.hpp>

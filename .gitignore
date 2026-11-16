@@ -8,4 +8,4 @@ out
 CMakeCache.txt
 CMakeFiles/
 *.code-workspace
-bin/
+bin

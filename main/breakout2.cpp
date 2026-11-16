@@ -1,7 +1,6 @@
-// any gravity, dampening 0.9
+// Downwards block breaking/melting
+// Any gravity, dampening 0.9
 #include <iostream>
-#include <stdio.h>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_final.hpp"
 #include "renderers/renderer_fast.hpp"
@@ -20,9 +19,6 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    // freopen("colors.txt", "r", stdin);
-    // freopen("positions.txt", "w", stdout);
-
     // Create window
     constexpr int window_width  = 2560;
     constexpr int window_height = 1380;
@@ -71,12 +67,10 @@ int main() {
         if (num_objects < max_objects) {
             spawned_count++;
             for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
-                // sf::Color currentColor = getColor(time + i * 0.5);
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{0, i * 10.0f}, radius);
                 new_object.color = sf::Color::White;
                 solver.setObjectVelocity(new_object, {800, 600});
             }
-            // if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {

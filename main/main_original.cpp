@@ -1,5 +1,5 @@
+// original version from part 1 (used with renderer_original and solver_original)
 #include <iostream>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_original.hpp"
 #include "renderers/renderer_original.hpp"
