@@ -1,115 +1,130 @@
-# About
-As my first foray into a large-ish project, I made a Verlet Integration-based physics solver to simulate particles moving around and interacting with each other and obstacles, with inspiration from 2 videos ([1](https://www.youtube.com/watch?v=lS_qeBy3aQI) and [2](https://www.youtube.com/watch?v=9IULfQH7E90)) on the same project by Pezzza's Work. I also made 2 videos on my process: [Part 1](https://www.youtube.com/watch?v=XL8B5nzNEOc) and [Part 2](https://www.youtube.com/watch?v=tqF883zXRA4&t=1213s). By skimming through these you can get a pretty good idea of how everything works.
 
-Part 1 code is in main/main_original.cpp, solvers/solver_original.hpp and renderers/renderer_original.hpp, so paste main_original.cpp into main.cpp and make sure it links to the right solver and renderer.
-Part 2 code uses renderer_fast.hpp, and solver_final.hpp. Some presets for the simulation can be found in the main folder.
+# Particle Simulation
+
+![CI](https://github.com/keyframe41/ParticleSimulation/actions/workflows/ci.yml/badge.svg)
+
+![simulation running](assets/demo.gif)
+
+A real-time 2D physics engine in C++ and SFML that simulates tens of thousands of colliding particles, with moving and rotating obstacles. It was my first large project, and I scaled it from about 2,000 to nearly 90,000 particles at 60 FPS (480 Hz calculation, 60 Hz rendering) through a series of optimizations.
+
+As my first foray into a large-ish project, I made a Verlet Integration-based physics solver to simulate particles moving around and interacting with each other and obstacles, with inspiration from 2 videos ([1](https://www.youtube.com/watch?v=lS_qeBy3aQI) and [2](https://www.youtube.com/watch?v=9IULfQH7E90)) on the same project by Pezzza's Work. I also made 2 videos on my process: [Part 1](https://www.youtube.com/watch?v=XL8B5nzNEOc) and [Part 2](https://www.youtube.com/watch?v=tqF883zXRA4&t=1213s), talking about the basic solver and collision handling, followed by some more advanced optimizations and new features. By skimming through these you can get a pretty good idea of how everything works.
+
+Part 1 code is in `main/main_original.cpp`, `solvers/solver_original.hpp` and `renderers/renderer_original.hpp`.
+Part 2 code uses `renderer_fast.hpp`, and `solver_final.hpp`. Some presets for the simulation can be found in the main folder.
 
 Beware of in.cpp and out.cpp, I used these to make bad apple (shown [here](https://www.youtube.com/watch?v=th8wpz4RstM)) and as I detail, this takes a very long time and a lot of memory to set up and run.
-The python code to get pixel colors based on positions is not on here, I'll send it to you if you need it.
+The python code to get pixel colors based on positions is not on here, I can provide it if you need it.
 
 This repository uses the CMake SFML project template, so instructions to install the tools needed to run this are below.
-# CMake SFML Project Template
 
-This repository template should allow for a fast and hassle-free kick start of your next SFML project using CMake.
-Thanks to [GitHub's nature of templates](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template), you can fork this repository without inheriting its Git history.
+## How it works
 
-The template starts out very basic, but might receive additional features over time:
+- **Velocity Verlet integration**, a second order integrator which is more stable (energy conservation speaking) than basic Euler integration. Each frame is split into 8 substeps (effectively 480 Hz), which keeps fast particles from going too far into obstacles or passing through without colliding.
+- **Collisions** between particles, done by pushing them apart along the line between their centers, and also dependent on particles' mass (they are all set equal currently in the repo). Walls also bounce particles with a dampening factor.
+- **Grid hashing** to speed up collisions by dividing the window into many small cells and updating the list of particles per cell every step, so each particle is only tested against particles in neighboring cells and runtime is no longer  `O(N^2)`.
+- **Multithreading.** The grid is split into vertical slices (multiple grid cells wide, 1 slice per thread), and all collisions/forces are processed in two passes, first the even-numbered and then the odd-numbered. This way threads don't access neighboring cells at the same time and the simulation can be kept deterministic.
+- **Circular and rectangular obstacles** which can move in two settings as well as rotate. To collide with a rotated box, a particle is transformed into that box's coordinate frame with a rotation matrix so it can be treated as an ordinary box with horizontal/vertical edges, and transformed back into the global frame with the inverse rotation (I like this, it was quite clever). The rectangular boxes can also have an optional durability setting so they fade out.
+- **Rendering** using vertex arrays, so all particles are drawn using one call, same goes for obstacles. Trails can be added to particles.
 
-- Basic CMake script to build your project and link SFML on any operating system
-- Basic [GitHub Actions](https://github.com/features/actions) script for all major platforms
+## Performance
 
-## How to Use
+| Step | Particles at 60 FPS |
+| --- | --- |
+| Basic solver w/ basic grid hashing (Part 1) | ~1,000 |
+| + Improved grid hashing | ~8,000|
+| + Multithreading | ~12,000 |
+| + Vertex-array rendering | ~88,000 |
 
-1. Install Git and CMake. Use your system's package manager if available.
-1. Follow the above instructions about how to use GitHub's project template feature to create your own project.
-1. Clone your new GitHub repo and open the repo in your text editor of choice.
-1. Open [CMakeLists.txt](CMakeLists.txt). Rename the project and the executable to whatever name you want. The project and executable names don't have to match.
-1. If you want to add or remove any .cpp files, change the source files listed in the [`add_executable`](CMakeLists.txt#L10) call in CMakeLists.txt to match the source files your project requires. If you plan on keeping the default main.cpp file then no changes are required.
-1. If you use Linux, install SFML's dependencies using your system package manager. On Ubuntu and other Debian-based distributions you can use the following commands:
-    ```
-    sudo apt update
-    sudo apt install \
-        libxrandr-dev \
-        libxcursor-dev \
-        libudev-dev \
-        libfreetype-dev \
-        libopenal-dev \
-        libflac-dev \
-        libvorbis-dev \
-        libgl1-mesa-dev \
-        libegl1-mesa-dev
-    ```
-1. Configure and build your project. Most popular IDEs support CMake projects with very little effort on your part.
-    - [VS Code](https://code.visualstudio.com) via the [CMake extension](https://code.visualstudio.com/docs/cpp/cmake-linux)
-    - [Visual Studio](https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170)
-    - [CLion](https://www.jetbrains.com/clion/features/cmake-support.html)
-    - [Qt Creator](https://doc.qt.io/qtcreator/creator-project-cmake.html)
+(Measured on Macbook M1 Pro)
 
-    Using CMake from the command line is straightforward as well.
+It's interesting that vertex arrays provide so much speedup, and the reason is that originally the particles were drawn with a very high number of vertices (34) compared to the new render which only deals with 4 vertices/particle and can also utilize the threading. Rendering probably took up a significant chunk of the time per frame originally, so by Amdahl's Law it didn't speed up that much, but once we made rendering faster the boost became more significant.
 
-    For a single-configuration generator (typically the case on Linux and macOS):
-    ```
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build
-    ```
+## Scenes
 
-    For a multi-configuration generator (typically the case on Windows):
-    ```
-    cmake -S . -B build
-    cmake --build build --config Release
-    ```
-1. Enjoy!
+Each scene is a separate program in `main/`:
 
-## Upgrading SFML
+| Program | Scene |
+| --- | --- |
+| `main_new` | 88,888 rainbow particles filling the screen, with optional set of obstacles |
+| `main_original` | Part 1 version, using the older solver and renderer |
+| `galtonboard` | Particles fall through pegs to demonstrate a bell curve |
+| `breakout1` | Atari Breakout-style scene |
+| `breakout2` | Blocks of particles breaking and melting downward |
+| `course` | A marble obstacle course, where red obstacles send particles back to the start |
+| `trail` | Particles leaving trails |
+| `media_generator` | Reads or writes particle positions to make videos and images, see below |
 
-SFML is found via CMake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) module.
-FetchContent automatically downloads SFML from GitHub and builds it alongside your own code.
-Beyond the convenience of not having to install SFML yourself, this ensures ABI compatability and simplifies things like specifying static versus shared libraries.
+**Controls**: 
+- left mouse button to pull particles toward the mouse
+- right button to repel particles
+- **Esc** to quit
 
-Modifying what version of SFML you want is as easy as changing the [`GIT_TAG`](CMakeLists.txt#L7) argument.
-Currently it uses the latest in-development version of SFML 2 via the `2.6.x` tag.
-If you're feeling adventurous and want to give SFML 3 a try, use the `master` tag.
-Beware, this requires changing your code to suit the modified API!
-The nice folks in the [SFML community](https://github.com/SFML/SFML#community) can help you with that transition and the bugs you may encounter along the way.
+Sometimes these controls (and extra ones) are commented out to improve performance.
 
-## But I want to...
+## Building and running
 
-Modify CMake options by adding them as configuration parameters (with a `-D` flag) or by modifying the contents of CMakeCache.txt and rebuilding.
+### Requirements
 
-### Use Static Libraries
+- CMake 3.28 or newer
+- A C++17 compiler
+- CMake downloads and builds SFML automatically
 
-By default SFML builds shared libraries and this default is inherited by your project.
-CMake's [`BUILD_SHARED_LIBS`](https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html) option lets you pick static or shared libraries for the entire project.
+On Linux (Ubuntu/Debian), first install SFML's dependencies:
 
-### Change Compilers
+```bash
+sudo apt-get install libxrandr-dev libxcursor-dev libudev-dev libfreetype-dev \
+  libgl1-mesa-dev libegl1-mesa-dev
+```
 
-See the variety of [`CMAKE_<LANG>_COMPILER`](https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html) options.
-In particular you'll want to modify `CMAKE_CXX_COMPILER` to point to the C++ compiler you wish to use.
+### Build
 
-### Change Compiler Optimizations
+```bash
+git clone https://github.com/keyframe41/ParticleSimulation.git
+cd ParticleSimulation
+cmake -S . -B build
+cmake --build build --config Release
+```
 
-CMake abstracts away specific optimizer flags through the [`CMAKE_BUILD_TYPE`](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html) option.
-By default this project recommends `Release` builds which enable optimizations.
-Other build types include `Debug` builds which enable debug symbols but disable optimizations.
-If you're using a multi-configuration generator (as is often the case on Windows), you can modify the [`CMAKE_CONFIGURATION_TYPES`](https://cmake.org/cmake/help/latest/variable/CMAKE_CONFIGURATION_TYPES.html#variable:CMAKE_CONFIGURATION_TYPES) option.
+### Run
 
-### Change Generators
+Each scene is built into `bin/`, for example:
 
-While CMake will attempt to pick a suitable default generator, some systems offer a number of generators to choose from.
-Ubuntu, for example, offers Makefiles and Ninja as two potential options.
-For a list of generators, click [here](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
-To modify the generator you're using you must reconfigure your project providing a `-G` flag with a value corresponding to the generator you want.
-You can't simply modify an entry in the CMakeCache.txt file unlike the above options.
-Then you may rebuild your project with this new generator.
+```bash
+./bin/main_new
+./bin/galtonboard
+```
 
-## More Reading
+### Images and videos from particles
 
-Here are some useful resources if you want to learn more about CMake:
+`media_generator` can save every particle's final position, or load a precomputed color for each particle, and due to the simulation's determinstic design we can generate images or videos. This is how I made [Bad Apple](https://www.youtube.com/watch?v=th8wpz4RstM), as well as other images. It's slow and memory-heavy (took ~10 minutes to load iirc), and it needs a separate Python script (not included) that generates video frames and matches positions against them to produce `colors.txt`, so it isn't built by default:
 
-- [How to Use CMake Without the Agonizing Pain - Part 1](https://alexreinking.com/blog/how-to-use-cmake-without-the-agonizing-pain-part-1.html)
-- [How to Use CMake Without the Agonizing Pain - Part 2](https://alexreinking.com/blog/how-to-use-cmake-without-the-agonizing-pain-part-2.html)
-- [Better CMake YouTube series by Jefferon Amstutz](https://www.youtube.com/playlist?list=PL8i3OhJb4FNV10aIZ8oF0AA46HgA2ed8g)
+```bash
+cmake -S . -B build -DBUILD_MEDIA_GENERATOR=ON
+cmake --build build --config Release
+```
+
+Without a `colors.txt`, the scenes fall back to rainbow colors.
+
+## Code map
+
+| File | Contents |
+| --- | --- |
+| `particle.hpp` | Particle object with Velocity Verlet |
+| `solvers/solver_final.hpp` | Final solver w/ grid hashing, threaded collisions, obstacles |
+| `solvers/solver_original.hpp` | Part 1 solver |
+| `renderers/renderer_fast.hpp` | Vertex-array renderer |
+| `renderers/renderer_original.hpp` | Part 1 renderer |
+| `obstacles/dot.hpp`, `obstacles/box.hpp` | Circular and rotating rectangular obstacles |
+| `thread.hpp` | Thread pool |
+| `utils/` | Math helpers and random number generation |
+| `main/` | Final particle scenes |
+
+## Credits
+
+- **Pezzza's Work** who inspired the project (and also led to my channel taking off). The two-pass threaded collision scheme follows the approach shown in his video, and `thread.hpp` is adapted his version [VerletSFML-Multithread](https://github.com/johnBuffer/VerletSFML-Multithread).
+- **Font:** JetBrains Mono, under the SIL Open Font License ([assets/OFL.txt](assets/OFL.txt)).
+- **Build setup:** based on SFML's [CMake project template](https://github.com/SFML/cmake-sfml-project).
 
 ## License
 
-The source code is dual licensed under Public Domain and MIT -- choose whichever you prefer.
+See [LICENSE.md](LICENSE.md).
