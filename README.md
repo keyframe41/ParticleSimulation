@@ -5,17 +5,12 @@
 
 ![simulation running](assets/demo.gif)
 
-A real-time 2D physics engine in C++ and SFML that simulates tens of thousands of colliding particles, with moving and rotating obstacles. It was my first large project, and I scaled it from about 2,000 to nearly 90,000 particles at 60 FPS (480 Hz calculation, 60 Hz rendering) through a series of optimizations.
+A real-time 2D physics engine in C++ and SFML that simulates tens of thousands of colliding particles, with moving and rotating obstacles. It was my first large project, and I scaled it from about 1,000 to nearly 90,000 particles at 60 FPS (480 Hz calculation, 60 Hz rendering) through a series of optimizations.
 
 As my first foray into a large-ish project, I made a Verlet Integration-based physics solver to simulate particles moving around and interacting with each other and obstacles, with inspiration from 2 videos ([1](https://www.youtube.com/watch?v=lS_qeBy3aQI) and [2](https://www.youtube.com/watch?v=9IULfQH7E90)) on the same project by Pezzza's Work. I also made 2 videos on my process: [Part 1](https://www.youtube.com/watch?v=XL8B5nzNEOc) and [Part 2](https://www.youtube.com/watch?v=tqF883zXRA4&t=1213s), talking about the basic solver and collision handling, followed by some more advanced optimizations and new features. By skimming through these you can get a pretty good idea of how everything works.
 
 Part 1 code is in `main/main_original.cpp`, `solvers/solver_original.hpp` and `renderers/renderer_original.hpp`.
 Part 2 code uses `renderer_fast.hpp`, and `solver_final.hpp`. Some presets for the simulation can be found in the main folder.
-
-Beware of in.cpp and out.cpp, I used these to make bad apple (shown [here](https://www.youtube.com/watch?v=th8wpz4RstM)) and as I detail, this takes a very long time and a lot of memory to set up and run.
-The python code to get pixel colors based on positions is not on here, I can provide it if you need it.
-
-This repository uses the CMake SFML project template, so instructions to install the tools needed to run this are below.
 
 ## How it works
 
@@ -96,7 +91,7 @@ Each scene is built into `bin/`, for example:
 
 ### Images and videos from particles
 
-`media_generator` can save every particle's final position, or load a precomputed color for each particle, and due to the simulation's determinstic design we can generate images or videos. This is how I made [Bad Apple](https://www.youtube.com/watch?v=th8wpz4RstM), as well as other images. It's slow and memory-heavy (took ~10 minutes to load iirc), and it needs a separate Python script (not included) that generates video frames and matches positions against them to produce `colors.txt`, so it isn't built by default:
+`media_generator` can save every particle's final position, or load a precomputed color for each particle, and due to the simulation's deterministic design we can generate images or videos. This is how I made [Bad Apple](https://www.youtube.com/watch?v=th8wpz4RstM), as well as other images. It's slow and memory-heavy (took ~10 minutes to load iirc), and it needs a separate Python script (not included) that generates video frames and matches positions against them to produce `colors.txt`, so it isn't built by default:
 
 ```bash
 cmake -S . -B build -DBUILD_MEDIA_GENERATOR=ON
@@ -121,7 +116,7 @@ Without a `colors.txt`, the scenes fall back to rainbow colors.
 
 ## Credits
 
-- **Pezzza's Work** who inspired the project (and also led to my channel taking off). The two-pass threaded collision scheme follows the approach shown in his video, and `thread.hpp` is adapted his version [VerletSFML-Multithread](https://github.com/johnBuffer/VerletSFML-Multithread).
+- **Pezzza's Work** who inspired the project (and also led to my channel taking off). The two-pass threaded collision scheme follows the approach shown in his video, and `thread.hpp` is adapted from his version [VerletSFML-Multithread](https://github.com/johnBuffer/VerletSFML-Multithread).
 - **Font:** JetBrains Mono, under the SIL Open Font License ([assets/OFL.txt](assets/OFL.txt)).
 - **Build setup:** based on SFML's [CMake project template](https://github.com/SFML/cmake-sfml-project).
 
