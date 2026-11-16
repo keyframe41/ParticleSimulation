@@ -69,7 +69,7 @@ Sometimes these controls (and extra ones) are commented out to improve performan
 - A C++17 compiler
 - CMake downloads and builds SFML automatically
 
-On Linux (Ubuntu/Debian), first install SFML's dependencies:
+On Linux, first install SFML's dependencies:
 
 ```bash
 sudo apt-get install libxrandr-dev libxcursor-dev libudev-dev libfreetype-dev \
