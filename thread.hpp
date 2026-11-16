@@ -1,3 +1,4 @@
+// Adapted from thread pool by Pezzza's Work (VerletSFML-Multithread), MIT License Copyright (c) 2021 Jean Tampon
 #pragma once
 #include <functional>
 #include <queue>

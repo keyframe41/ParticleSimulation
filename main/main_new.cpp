@@ -5,6 +5,7 @@
 #include "solvers/solver_final.hpp"
 #include "renderers/renderer_fast.hpp"
 #include "thread.hpp"
+#include <fstream>
 #include <chrono>
 #include <thread>
 
@@ -19,20 +20,21 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    freopen("colors.txt", "r", stdin);
-    // freopen("positions.txt", "w", stdout);
+    std::ifstream color_file("colors.txt"); // optional precomputed colors to generate images or other things
+    // freopen("positions.txt", "w", stdout); // optional to output positions, so you can use a separate program to map to colors on an image
 
     // Create window
     constexpr int window_width  = 1140;
-    constexpr int window_height = 1140;
+    constexpr int window_height = 1100;
 
     const float        radius         = 2.0f;
     const int          max_objects    = 88888;
     const sf::Vector2f spawn_position = {4.0f, 4.0f};
     const float        spawn_velocity = 400.0f;
     const int          max_spawner    = 24;  
-    int                num_spawner    = 24;
+    int                num_spawner    = 1;
     int                spawned_count  = 0;
+    sf::Vector2f       gravity        = {0.0f, 250.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -41,7 +43,7 @@ int main() {
     window.setFramerateLimit(frame_rate);
     
     Threader threadPool(10);
-    Solver solver(window_width, window_height, radius, threadPool);
+    Solver solver(window_width, window_height, radius, threadPool, gravity);
     Renderer renderer(window, threadPool, solver);
 
     sf::Clock timer, fpstimer;
@@ -49,6 +51,7 @@ int main() {
     int r, g, b;
     sf::Font arialFont;
     arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    // Optional obstable block
     /*
     for (int i = 1; i <= 7; i++) {
         ObstacleDot& obstacle = solver.addObstacleDot(15.0f, 
@@ -85,7 +88,7 @@ int main() {
         moving.rotation = 30.0f;
     }
     */
-
+    
     // Main loop
     while (window.isOpen()) {
         sf::Event event{};
@@ -95,25 +98,27 @@ int main() {
             }
         }
         float time = timer.getElapsedTime().asSeconds();
-        // if (time > 90 && !done) {
-        //     done = true;
-        //     for (Particle& obj : solver.objects) {
-        //         std::cout << obj.position.x << ' ' << obj.position.y << std::endl;
-        //     }
-        // }
+        // Print positions loop
+        /*
+        if (time > 90 && !done) {
+            done = true;
+            for (Particle& obj : solver.objects) {
+                std::cout << obj.position.x << ' ' << obj.position.y << std::endl;
+            }
+        }
+        */
         // Spawn particles
         int num_objects = solver.objects.size();
         if (num_objects < max_objects) {
-            // sf::Color currentColor = getColor(time);
+            sf::Color currentColor = getColor(time);
             spawned_count++;
             for (int i = 0; i < std::min(num_spawner, max_objects - num_objects); i++) {
                 auto& new_object = solver.addObject(spawn_position + sf::Vector2f{0.0f, i * 8.0f}, radius);
-                std::cin >> r >> g >> b;
-                new_object.color = {static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)};
-                // new_object.color = currentColor;
+                if (color_file >> r >> g >> b) new_object.color = {static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)};
+                else new_object.color = currentColor;
                 solver.setObjectVelocity(new_object, spawn_velocity * sf::Vector2f{0.8, 0.6});
             }
-            // if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
+            if (spawned_count / 50 >= num_spawner && num_spawner < max_spawner) num_spawner++;
         }
         // Detect mouse action
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
@@ -126,13 +131,15 @@ int main() {
             sf::Vector2f pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window)) * ratio;
             solver.mousePush(pos, 120);
         }
-
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) solver.toggleGravityUp();
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) solver.toggleGravityDown();
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) solver.toggleGravityLeft();
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) solver.toggleGravityRight();
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) std::this_thread::sleep_for (std::chrono::milliseconds(60));
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) std::this_thread::sleep_for (std::chrono::milliseconds(250));
+        // Optional fun controls
+        /* 
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) solver.toggleGravityUp();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) solver.toggleGravityDown();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) solver.toggleGravityLeft();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) solver.toggleGravityRight();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) std::this_thread::sleep_for (std::chrono::milliseconds(60));
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) std::this_thread::sleep_for (std::chrono::milliseconds(250));
+        */
 
         fpstimer.restart();
         solver.update();

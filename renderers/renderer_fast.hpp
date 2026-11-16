@@ -12,7 +12,7 @@ public:
         , solver{solver_}
         , threader{threader_}
     {
-        obj_texture.loadFromFile("/Users/richard/Desktop/SFMLExperiments/circle.png");
+        obj_texture.loadFromFile("assets/circle.png");
         obj_texture.generateMipmap();
         obj_texture.setSmooth(true);
     }

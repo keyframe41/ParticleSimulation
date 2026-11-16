@@ -20,7 +20,7 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    freopen("colors.txt", "r", stdin);
+    // std::ifstream color_file("colors.txt"); // optional: precomputed colors (Bad Apple)
     // freopen("positions.txt", "w", stdout);
 
     // Create window
@@ -34,6 +34,7 @@ int main() {
     const int          max_spawner    = 8;  
     int                num_spawner    = 8;
     int                spawned_count  = 0;
+    sf::Vector2f       gravity        = {0.0f, 250.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -42,12 +43,12 @@ int main() {
     window.setFramerateLimit(frame_rate);
     
     Threader threadPool(10);
-    Solver solver(window_width, window_height, radius, threadPool);
+    Solver solver(window_width, window_height, radius, threadPool, gravity);
     Renderer renderer(window, threadPool, solver);
 
     sf::Clock timer, fpstimer;
     sf::Font arialFont;
-    arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    arialFont.loadFromFile("assets/Arial Unicode.ttf");
 
     ObstacleBox& box = solver.addObstacleBox({800, 5000}, {800, 1400});
     box.rotation = -60;

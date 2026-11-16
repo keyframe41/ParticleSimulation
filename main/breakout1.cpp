@@ -1,11 +1,10 @@
 // gravity 0, dampening 1
 #include <iostream>
-#include <stdio.h>
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include "solvers/solver_final.hpp"
 #include "renderers/renderer_fast.hpp"
 #include "thread.hpp"
+#include <fstream>
 #include <chrono>
 #include <thread>
 
@@ -20,8 +19,7 @@ static sf::Color getColor(float t) {
 }
 
 int main() {
-    freopen("colors.txt", "r", stdin);
-    // freopen("positions.txt", "w", stdout);
+    std::ifstream color_file("colors.txt"); // optional: precomputed colors (Bad Apple)
 
     // Create window
     constexpr int window_width  = 2560;
@@ -30,9 +28,9 @@ int main() {
     const float        radius         = 10.0f;
     const int          max_objects    = 240;
     const sf::Vector2f spawn_position = {window_width / 2 - 105.0, window_height - 50};
-    const int          max_spawner    = 8;  
     int                num_spawner    = 8;
     int                spawned_count  = 0;
+    sf::Vector2f       gravity        = {0.0f, 250.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -41,12 +39,12 @@ int main() {
     window.setFramerateLimit(frame_rate);
     
     Threader threadPool(10);
-    Solver solver(window_width, window_height, radius, threadPool);
+    Solver solver(window_width, window_height, radius, threadPool, gravity);
     Renderer renderer(window, threadPool, solver);
 
     sf::Clock timer, fpstimer;
     sf::Font arialFont;
-    arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    arialFont.loadFromFile("assets/Arial Unicode.ttf");
 
     for (int i = 0; i < 10; i++)
         for (int j = 0; j < 20; j++) {
@@ -64,7 +62,6 @@ int main() {
                 window.close();
             }
         }
-        float time = timer.getElapsedTime().asSeconds();
         // Spawn particles
         int num_objects = solver.objects.size();
         if (num_objects < max_objects) {

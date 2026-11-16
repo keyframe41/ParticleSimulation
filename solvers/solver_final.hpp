@@ -15,11 +15,12 @@ float getRandom() {
 
 class Solver {
 public:
-    Solver(float width, float height, float radius, Threader& threader_) 
+    Solver(float width, float height, float radius, Threader& threader_, sf::Vector2f gravity_) 
         : window_width{width}
         , window_height{height}
         , grid_size{2 * radius}
         , threader{threader_}
+        , gravity{gravity_}
     {}
 
     virtual ~Solver() {
@@ -88,7 +89,7 @@ public:
     float                    window_width     = 1260.0f;
     float                    window_height    = 1260.0f;
     float                    dampening        = 0.8f;
-    sf::Vector2f             gravity          = {0.0f, 0.0f}; // 250
+    sf::Vector2f             gravity          = {0.0f, 250.0f}; // 250
     std::vector<Particle>    objects;
 
     std::vector<ObstacleDot>  dot_obstacles;

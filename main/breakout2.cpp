@@ -33,6 +33,7 @@ int main() {
     const int          max_spawner    = 16;  
     int                num_spawner    = 16;
     int                spawned_count  = 0;
+    sf::Vector2f       gravity        = {0.0f, 250.0f};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 1;
@@ -41,12 +42,12 @@ int main() {
     window.setFramerateLimit(frame_rate);
     
     Threader threadPool(10);
-    Solver solver(window_width, window_height, radius, threadPool);
+    Solver solver(window_width, window_height, radius, threadPool, gravity);
     Renderer renderer(window, threadPool, solver);
 
     sf::Clock timer, fpstimer;
     sf::Font arialFont;
-    arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    arialFont.loadFromFile("assets/Arial Unicode.ttf");
 
     for (int i = 0; i < 256; i++)
         for (int j = 0; j < 100; j++) {

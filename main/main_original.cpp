@@ -36,7 +36,7 @@ int main() {
 
     sf::Clock respawnClock, timer, fpstimer;
     sf::Font arialFont;
-    arialFont.loadFromFile("/Library/Fonts/Arial Unicode.ttf");
+    arialFont.loadFromFile("assets/Arial Unicode.ttf");
 
     // Main loop
     while (window.isOpen()) {
