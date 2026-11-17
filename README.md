@@ -56,6 +56,20 @@ Each scene is a separate program in `main/`:
 
 Sometimes these controls (and extra ones) are commented out to improve performance.
 
+## Files
+
+| File | Contents |
+| --- | --- |
+| `particle.hpp` | Particle object with Velocity Verlet |
+| `solvers/solver_final.hpp` | Final solver w/ grid hashing, threaded collisions, obstacles |
+| `solvers/solver_original.hpp` | Part 1 solver |
+| `renderers/renderer_fast.hpp` | Vertex-array renderer |
+| `renderers/renderer_original.hpp` | Part 1 renderer |
+| `obstacles/dot.hpp`, `obstacles/box.hpp` | Circular and rotating rectangular obstacles |
+| `thread.hpp` | Thread pool |
+| `utils/` | Math helpers and random number generation |
+| `main/` | Final particle scenes |
+
 ## Building and running
 
 ### Requirements
@@ -99,20 +113,6 @@ cmake --build build --config Release
 ```
 
 Without a `colors.txt`, the scenes fall back to rainbow colors.
-
-## Code map
-
-| File | Contents |
-| --- | --- |
-| `particle.hpp` | Particle object with Velocity Verlet |
-| `solvers/solver_final.hpp` | Final solver w/ grid hashing, threaded collisions, obstacles |
-| `solvers/solver_original.hpp` | Part 1 solver |
-| `renderers/renderer_fast.hpp` | Vertex-array renderer |
-| `renderers/renderer_original.hpp` | Part 1 renderer |
-| `obstacles/dot.hpp`, `obstacles/box.hpp` | Circular and rotating rectangular obstacles |
-| `thread.hpp` | Thread pool |
-| `utils/` | Math helpers and random number generation |
-| `main/` | Final particle scenes |
 
 ## Credits
 
